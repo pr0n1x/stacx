@@ -11,7 +11,7 @@ with podman.
 | File | Role |
 |---|---|
 | `compose` | The wrapper: `stack/compose [--cx <ctx>] [--no-override] <compose args…>` |
-| `export.env.sh` | The resolver: computes the `COMPOSE_*` environment for a context |
+| `export-env.sh` | The resolver: computes the `COMPOSE_*` environment for a context |
 | `envrc` | direnv fragment — the shell carries the active context's environment |
 | `completion.bash` | Bash completion for the wrapper, plus the `dok` shorthand |
 | `examples/context.example.env` | Commented copy of the `context[.<ctx>].env` knobs |
@@ -57,8 +57,7 @@ eval "$(stack/compose --export)"      # the resolved variables, into this shell
 |---|---|
 | `--cx <ctx>`, `--ctx`, `--context` (or `=<ctx>`) | select the context; `default` names the default stack explicitly |
 | `--no-override` | clear `COMPOSE_CTX_OVERRIDES` — run the base stack alone (a second instance beside the first) |
-| `--env` | print the resolved `COMPOSE_*` variables and run nothing |
-| `--export` | print the resolver's `export`/`unset` lines for `eval` and run nothing |
+| `--env`, `--export` | print the resolved `COMPOSE_*` variables as `export`/`unset` lines (readable, and `eval`-able) and run nothing |
 
 Everything else is passed to compose untouched, in order. The command it
 runs is `docker compose` unless `COMPOSE_COMMAND` says otherwise

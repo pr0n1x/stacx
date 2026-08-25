@@ -8,5 +8,5 @@
 # from the project root, which is the root the resolver is given.
 
 stacx_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-eval "$("$stacx_dir/export.env.sh" "$PWD")"
-watch_file "$stacx_dir/export.env.sh"
+eval "$("$stacx_dir/export-env.sh" "$PWD")"
+watch_file "$stacx_dir/export-env.sh"

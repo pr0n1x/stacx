@@ -89,7 +89,7 @@ _compose_ctx() {
         --no-override)
             no_override=1
             ;;
-        --env) ;;
+        --env | --export) ;;
         *)
             args+=("${COMP_WORDS[i]}")
             ;;
@@ -115,7 +115,7 @@ _compose_ctx() {
     case "$cur" in
     -*)
         mapfile -t -O "${#COMPREPLY[@]}" COMPREPLY < <(
-            compgen -W "--cx --ctx --context --no-override --env" -- "$cur"
+            compgen -W "--cx --ctx --context --no-override --env --export" -- "$cur"
         )
         ;;
     esac
