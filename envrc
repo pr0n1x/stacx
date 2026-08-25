@@ -1,0 +1,12 @@
+# direnv fragment. Source it from the project's .envrc:
+#
+#     source stack/context/envrc
+#
+# The shell then carries the COMPOSE_* environment of the active context
+# (a COMPOSE_CONTEXT exported above that line, or the `context.env` pin),
+# and direnv re-evaluates when the resolver changes. direnv runs .envrc
+# from the project root, which is the root the resolver is given.
+
+stacx_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+eval "$("$stacx_dir/export.env.sh" "$PWD")"
+watch_file "$stacx_dir/export.env.sh"

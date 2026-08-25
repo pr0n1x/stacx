@@ -1,0 +1,95 @@
+#!/bin/bash
+# The context-selecting compose wrapper: resolves the compose files, env
+# files, profiles and project name of a CONTEXT (export.env.sh
+# explains the model) and runs compose with them.
+#
+# It is called through its place in the project — `<project>/stack/compose`,
+# a symlink into the stacx checkout beside it (`stack/context/`) or a plain
+# copy — and the project root is the directory above that place. The
+# resolver is found beside the wrapper's REAL file, so the link is what ties
+# the two together: call the link, not the file inside the checkout, or the
+# root resolves one level short.
+self_dir="$(dirname "$0")"
+project_dir="$(cd "$self_dir/.." && pwd)"
+pkg_dir="$(dirname "$(readlink -f "$0")")"
+
+# The compose command to run — `podman compose` and `podman-compose` fit
+# the same way. Split on whitespace on purpose.
+compose_command="${COMPOSE_COMMAND:-docker compose}"
+
+# `--cx`/`--ctx`/`--context <name>` (or `=<name>`) selects the compose
+# context the same way direnv's COMPOSE_CONTEXT does, for shells without
+# direnv. The flag is consumed here — everything else is passed through to
+# compose untouched, and its own arguments keep their order.
+args=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --ctx | --context | --cx)
+        # A `-`-prefixed word is the next flag, not a context name: without
+        # this the flag is swallowed as the value and compose runs bare.
+        case "${2-}" in
+        "" | -*)
+            echo "$1 needs a context name" >&2
+            exit 1
+            ;;
+        esac
+        export COMPOSE_CONTEXT="$2"
+        shift 2
+        ;;
+    --ctx=* | --context=* | --cx=*)
+        if [ -z "${1#*=}" ]; then
+            echo "${1%%=*} needs a context name" >&2
+            exit 1
+        fi
+        export COMPOSE_CONTEXT="${1#*=}"
+        shift
+        ;;
+    --no-override)
+        # Clear the declared override tiers — what a second instance of
+        # the stack (a worktree beside the main tree) needs, since those
+        # files pin daemon-global names and addresses. Set-but-empty beats
+        # the context env files: they fill only unset variables.
+        export COMPOSE_CTX_OVERRIDES=""
+        shift
+        ;;
+    --env)
+        # Print what this invocation resolves to instead of running
+        # compose — the answer to "which files/profiles am I about to act
+        # on", and the flags above are honoured, so `--env --cx x
+        # --no-override` shows that combination.
+        show_env=1
+        shift
+        ;;
+    --export)
+        # Print the resolver's output itself — `export`/`unset` lines for
+        # eval, honouring the flags above the same way. What the direnv
+        # fragment and the completion use: eval "$(stack/compose --export)".
+        show_export=1
+        shift
+        ;;
+    *)
+        args+=("$1")
+        shift
+        ;;
+    esac
+done
+
+compose_export="$("$pkg_dir/export.env.sh" "$project_dir")" || exit 1
+
+if [ -n "${show_export:-}" ]; then
+    printf '%s\n' "$compose_export"
+elif [ -n "${show_env:-}" ]; then
+    eval "$compose_export"
+    for var in COMPOSE_CONTEXT_BASE COMPOSE_CONTEXT COMPOSE_PROJECT_NAME \
+        COMPOSE_FILE COMPOSE_PROFILES COMPOSE_ENV_FILES COMPOSE_CTX_OVERRIDES; do
+        if [ -n "${!var}" ]; then
+            echo "${var}=${!var}"
+        else
+            echo "# ${var} unset"
+        fi
+    done
+else
+    eval "$compose_export"
+    # shellcheck disable=SC2086
+    $compose_command "${args[@]}"
+fi
