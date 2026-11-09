@@ -15,6 +15,7 @@ with podman.
 | `envrc` | direnv fragment — the shell carries the active context's environment |
 | `completion.bash` | Bash completion for the wrapper, plus the `dok` shorthand |
 | `examples/context.example.env` | Commented copy of the `context[.<ctx>].env` knobs |
+| `skills/stacx/SKILL.md` | An agent skill: the wrapper, the resolution rules and the use cases, for Claude Code, Codex and the like ([below](#agent-skill)) |
 
 ## Install
 
@@ -158,6 +159,40 @@ A `.gitignore` to match:
 /compose.override.y*ml
 /compose.*.override.y*ml
 ```
+
+## Agent skill
+
+`skills/stacx/` is a skill in the format Claude Code, Codex and similar
+agents discover: one `SKILL.md` whose frontmatter names when to use it, and
+a body that walks the wrapper, how a context resolves, the files and knobs,
+the override tiers, the use cases (second instance from a worktree, where a
+piece of config belongs, a release build without personal tiers, adding a
+context or a tier, a one-shot job as a context) and the pitfalls behind
+them. It names no project: the project's own contexts, zones and tiers stay
+in that project's docs.
+
+Install it where the agent looks for skills. A project that vendors stacx
+as a submodule links into the checkout, so the skill updates with
+`git submodule update --remote`:
+
+```sh
+# project-wide, for every agent that reads .agents/skills (Codex, and
+# Claude through the link below)
+mkdir -p .agents/skills .claude/skills
+ln -s ../../stack/context/skills/stacx .agents/skills/stacx
+ln -s ../../.agents/skills/stacx      .claude/skills/stacx
+git add .agents/skills/stacx .claude/skills/stacx
+```
+
+A project that copied the files instead of adding the submodule copies the
+skill the same way (`cp -r …/stacx/skills/stacx .agents/skills/`), and
+updates it by hand. For every project at once, link it into the user's
+skill directory instead: `ln -s /path/to/stacx/skills/stacx
+~/.claude/skills/stacx` (Claude Code; Codex reads `~/.codex/skills/`).
+
+The skill's reference section points back at this README, so flags and
+knobs are documented once, here; a change to the wrapper or the resolver
+that alters them updates `skills/stacx/SKILL.md` in the same commit.
 
 ## Re-eval safety
 
